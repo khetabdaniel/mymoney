@@ -1,0 +1,258 @@
+<html><head><base href="github.io" target="_blank" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المحافظ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f6f9fc 0%, #e9f1f9 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(26, 115, 232, 0.2);
+    }
+
+    .add-wallet-form {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .wallets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .wallet-card {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .wallet-card:hover {
+      transform: translateY(-5px);
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #eef2f7;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+    }
+
+    .delete-wallet {
+      background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+      margin-top: 10px;
+    }
+
+    .wallet-balance {
+      font-size: 1.5em;
+      color: #1a73e8;
+      margin: 10px 0;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      width: 90%;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      border-radius: 15px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .close-modal {
+      float: left;
+      cursor: pointer;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>إدارة المحافظ</h1>
+      <p>أضف وأدر محافظك المالية بكل سهولة</p>
+    </div>
+
+    <div class="add-wallet-form">
+      <h3>إضافة محفظة جديدة</h3>
+      <input type="text" id="wallet-name" placeholder="اسم المحفظة">
+      <select id="wallet-currency" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eef2f7; border-radius: 10px; font-size: 16px;">
+        <option value="DZD">الدينار الجزائري</option>
+        <option value="SAR">الريال السعودي</option>
+        <option value="USD">الدولار الأمريكي</option>
+        <option value="EUR">اليورو</option>
+      </select>
+      <button onclick="addWallet()">إضافة محفظة</button>
+    </div>
+
+    <div class="wallets-grid" id="wallets-container">
+      <!-- Wallets will be added here dynamically -->
+    </div>
+  </div>
+
+  <!-- Modal for wallet management -->
+  <div id="wallet-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeWalletModal()">&times;</span>
+      <div id="wallet-management">
+        <!-- Wallet management content will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let wallets = [];
+    let currentWallet = null;
+
+    function addWallet() {
+      const walletName = document.getElementById('wallet-name').value;
+      const walletCurrency = document.getElementById('wallet-currency').value;
+      if (walletName) {
+        const wallet = {
+          id: Date.now(),
+          name: walletName,
+          transactions: [],
+          currency: walletCurrency
+        };
+        wallets.push(wallet);
+        updateUI();
+        saveData();
+        document.getElementById('wallet-name').value = '';
+      }
+    }
+
+    function deleteWallet(id) {
+      if (confirm('هل أنت متأكد من حذف هذه المحفظة؟')) {
+        wallets = wallets.filter(wallet => wallet.id !== id);
+        updateUI();
+        saveData();
+      }
+    }
+
+    function openWallet(id) {
+      const wallet = wallets.find(w => w.id === id);
+      if (wallet) {
+        localStorage.setItem('currentWallet', JSON.stringify(wallet));
+        window.location.href = 'page2.html';
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('wallets', JSON.stringify(wallets));
+    }
+
+    function loadData() {
+      const savedWallets = localStorage.getItem('wallets');
+      if (savedWallets) {
+        wallets = JSON.parse(savedWallets);
+        updateUI();
+      }
+    }
+
+    function updateUI() {
+      const container = document.getElementById('wallets-container');
+      container.innerHTML = '';
+      
+      wallets.forEach(wallet => {
+        const card = document.createElement('div');
+        card.className = 'wallet-card';
+        card.innerHTML = `
+          <h3>${wallet.name}</h3>
+          <p>العملة: ${wallet.currency}</p>
+          <div class="wallet-actions">
+            <button onclick="openWallet(${wallet.id})">فتح المحفظة</button>
+            <button onclick="deleteWallet(${wallet.id})" class="delete-btn">حذف</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function closeWalletModal() {
+      document.getElementById('wallet-modal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('wallet-modal');
+      if (event.target === modal) {
+        closeWalletModal();
+      }
+    }
+
+    window.addEventListener('beforeunload', saveData);
+    loadData();
+  </script>
+</body>
+</html>

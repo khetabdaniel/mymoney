@@ -1,0 +1,14 @@
+{
+  "packageId": "com.mymoney.app",
+  "name": "My Money",
+  "launcherName": "My Money",
+  "display": "standalone",
+  "orientation": "portrait",
+  "backgroundColor": "#FFFFFF",
+  "themeColor": "#3280ff",
+  "startUrl": "/page1.html",
+  "webManifestUrl": "/manifest.json",
+  "iconUrl": "/icon-512x512.png",
+  "maskableIconUrl": "/icon-512x512.png",
+  "splashScreenFadeOutDuration": 300
+}

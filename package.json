@@ -1,0 +1,13 @@
+{
+  "name": "my-money",
+  "version": "1.0.0",
+  "description": "تطبيق إدارة المحافظ المالية",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx http-server ."
+  },
+  "devDependencies": {
+    "electron": "^25.9.8",
+    "electron-builder": "^24.13.3"
+  }
+}

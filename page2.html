@@ -1,0 +1,992 @@
+<html><head><base href="github.io" target="_blank" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المصاريف والمدخرات</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-font@1.0.7/dist/Lato-normal.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-font@1.0.7/dist/Lato-bold.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f6f9fc 0%, #e9f1f9 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(26, 115, 232, 0.2);
+      transform: translateY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .header:hover {
+      transform: translateY(-5px);
+    }
+
+    .balance-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .balance-card:hover {
+      transform: scale(1.02);
+    }
+
+    .balance-amount {
+      font-size: 2.5em;
+      color: #1a73e8;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .stat-card {
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .savings-card {
+      background: rgba(40, 167, 69, 0.1);
+      color: #28a745;
+    }
+
+    .expense-card {
+      background: rgba(220, 53, 69, 0.1);
+      color: #dc3545;
+    }
+
+    .transaction-form {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #eef2f7;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: #1a73e8;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #eef2f7;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    input[type="date"]:focus {
+      border-color: #1a73e8;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+    }
+
+    button {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+    }
+
+    .transaction-list {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .transaction-item {
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .transaction-item:hover {
+      background: #f8f9fa;
+      transform: translateX(-5px);
+    }
+
+    .expense {
+      color: #dc3545;
+      font-weight: bold;
+    }
+
+    .income {
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .transaction.income {
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+    .transaction.expense {
+      background-color: rgba(244, 67, 54, 0.1);
+    }
+    .transaction .amount.income {
+      color: #4CAF50;
+    }
+    .transaction .amount.expense {
+      color: #f44336;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .export-section {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .export-date-range {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border: 1px solid #dee2e6;
+    }
+    .export-date-range .date-inputs {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .export-date-range .date-group {
+      flex: 1;
+    }
+    .export-date-range label {
+      display: block;
+      margin-bottom: 5px;
+      color: #495057;
+      font-weight: bold;
+    }
+    .export-date-range input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+    }
+    .export-date-range .date-shortcuts {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .export-date-range .date-shortcut {
+      padding: 5px 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      background: rgb(50, 128, 255);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .export-date-range .date-shortcut:hover {
+      background: #6794c1;
+    }
+
+    .home-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      border: 2px solid #1a73e8;
+      color: #1a73e8;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .home-button:hover {
+      background: #1a73e8;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+    }
+
+    .home-button svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .edit-btn, .delete-btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .edit-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      overflow-y: auto;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+      border-radius: 8px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .modal-content .button-group {
+      position: sticky;
+      bottom: 0;
+      background-color: #fefefe;
+      padding-top: 10px;
+      margin-top: 10px;
+      border-top: 1px solid #eee;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>إدارة المصاريف والمدخرات</h1>
+      <button style="margin-top: 10px;" onclick="location.href='page1.html'">إدارة المحافظ</button>
+      <p>تتبع مصاريفك ومدخراتك بكل سهولة</p>
+    </div>
+
+    <div class="balance-card">
+      <h2>الرصيد الحالي</h2>
+      <div class="currency-selector">
+        <select id="currency-select" onchange="updateCurrency()">
+          <option value="SAR">ريال سعودي (SAR)</option>
+          <option value="USD">دولار أمريكي (USD)</option>
+          <option value="EUR">يورو (EUR)</option>
+          <option value="GBP">جنيه إسترليني (GBP)</option>
+          <option value="DZD">دينار جزائري (DZD)</option>
+        </select>
+      </div>
+      <div class="balance-amount" id="total-balance">0 ريال</div>
+      <div class="stats-container">
+        <div class="stat-card savings-card">
+          <h3>المدخرات</h3>
+          <div id="savings">0 ريال</div>
+        </div>
+        <div class="stat-card expense-card">
+          <h3>المصاريف</h3>
+          <div id="expenses">0 ريال</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="export-section">
+      <h3>تصدير العمليات إلى PDF</h3>
+      <div class="export-date-range">
+        <div class="date-inputs">
+          <div class="date-group">
+            <label for="export-start-date">من تاريخ:</label>
+            <input type="date" id="export-start-date" required>
+          </div>
+          <div class="date-group">
+            <label for="export-end-date">إلى تاريخ:</label>
+            <input type="date" id="export-end-date" required>
+          </div>
+        </div>
+        
+      </div>
+      <button onclick="exportToPDF()" class="action-button">تصدير إلى PDF</button>
+    </div>
+
+    <div class="transaction-form">
+      <h3>إضافة معاملة جديدة</h3>
+      <select id="transaction-type">
+        <option value="income">دخل</option>
+        <option value="expense">مصروف</option>
+      </select>
+      <input type="text" id="transaction-description" placeholder="وصف المعاملة بالانجليزي ">
+      <input type="number" id="transaction-amount" placeholder="المبلغ">
+      <input type="date" id="transaction-date">
+      <button onclick="addTransaction()">إضافة معاملة</button>
+    </div>
+
+    <div class="transaction-list">
+      <h3>سجل المعاملات</h3>
+      <div id="transactions-list"></div>
+    </div>
+  </div>
+
+  <!-- إضافة نافذة تعديل العملية -->
+  <div id="editTransactionModal" class="modal">
+    <div class="modal-content">
+      <h2>تعديل العملية</h2>
+      <input type="hidden" id="edit-transaction-id">
+      <div class="input-group">
+        <label for="edit-description">الوصف:</label>
+        <input type="text" id="edit-description" required>
+      </div>
+      <div class="input-group">
+        <label for="edit-amount">المبلغ:</label>
+        <input type="number" id="edit-amount" step="0.01" required>
+      </div>
+      <div class="input-group">
+        <label for="edit-type">النوع:</label>
+        <select id="edit-type">
+          <option value="income">مدخول</option>
+          <option value="expense">مصروف</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="edit-date">التاريخ:</label>
+        <input type="date" id="edit-date" required>
+      </div>
+      <div class="button-group">
+        <button onclick="updateTransaction()">حفظ التعديلات</button>
+        <button onclick="closeEditModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentWallet = null;
+    let currentCurrency = 'SAR';
+    const currencySymbols = {
+      'SAR': 'ريال',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'DZD': 'د.ج'
+    };
+
+    // Exchange rates (simplified - you might want to use a real API)
+    const exchangeRates = {
+      'SAR': 1,
+      'USD': 0.27,
+      'EUR': 0.25,
+      'GBP': 0.21,
+      'DZD': 36.41
+    };
+
+    function loadCurrentWallet() {
+      const savedWallet = localStorage.getItem('currentWallet');
+      if (savedWallet) {
+        currentWallet = JSON.parse(savedWallet);
+        if (!currentWallet.transactions) {
+          currentWallet.transactions = [];
+        }
+        currentCurrency = currentWallet.currency;
+        document.getElementById('currency-select').value = currentCurrency;
+        updateUI();
+      }
+    }
+
+    function updateCurrency() {
+      currentCurrency = document.getElementById('currency-select').value;
+      updateUI();
+    }
+
+    function convertAmount(amount, toCurrency) {
+      const inSAR = amount / exchangeRates[currentCurrency];
+      return inSAR * exchangeRates[toCurrency];
+    }
+
+    function formatAmount(amount) {
+      const converted = convertAmount(amount, currentCurrency);
+      return `${converted.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currencySymbols[currentCurrency]}`;
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-GB', { // استخدام التنسيق الأوروبي (يوم/شهر/سنة)
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    }
+
+    function addTransaction() {
+      if (!currentWallet) return;
+      
+      const type = document.getElementById('transaction-type').value;
+      const description = document.getElementById('transaction-description').value;
+      const amount = parseFloat(document.getElementById('transaction-amount').value);
+      const date = document.getElementById('transaction-date').value;
+      
+      if (description && amount && date) {
+        const transaction = {
+          type,
+          description,
+          amount,
+          date: formatDate(date)
+        };
+
+        currentWallet.transactions.push(transaction);
+        updateUI();
+        clearForm();
+        saveData();
+      }
+    }
+
+    function clearForm() {
+      document.getElementById('transaction-description').value = '';
+      document.getElementById('transaction-amount').value = '';
+      document.getElementById('transaction-date').value = '';
+    }
+
+    function saveData() {
+      if (!currentWallet) return;
+      
+      // Save current wallet back to localStorage
+      localStorage.setItem('currentWallet', JSON.stringify(currentWallet));
+      
+      // Get all wallets
+      let wallets = JSON.parse(localStorage.getItem('wallets') || '[]');
+      
+      // Update the current wallet in the wallets array
+      const index = wallets.findIndex(w => w.id === currentWallet.id);
+      if (index !== -1) {
+        wallets[index] = currentWallet;
+        localStorage.setItem('wallets', JSON.stringify(wallets));
+      }
+    }
+
+    function openEditModal(index) {
+      const transaction = currentWallet.transactions[index];
+      const modal = document.getElementById('editTransactionModal');
+      
+      document.getElementById('edit-transaction-id').value = index;
+      document.getElementById('edit-description').value = transaction.description;
+      document.getElementById('edit-amount').value = transaction.amount;
+      document.getElementById('edit-type').value = transaction.type;
+      document.getElementById('edit-date').value = transaction.date.split('/').reverse().join('-');
+      
+      modal.style.display = 'block';
+    }
+
+    function closeEditModal() {
+      const modal = document.getElementById('editTransactionModal');
+      modal.style.display = 'none';
+    }
+
+    async function exportToPDF() {
+      try {
+        if (!currentWallet || !currentWallet.transactions || currentWallet.transactions.length === 0) {
+          alert('لا توجد عمليات للتصدير');
+          return;
+        }
+
+        const startDate = new Date(document.getElementById('export-start-date').value);
+        const endDate = new Date(document.getElementById('export-end-date').value);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          alert('الرجاء اختيار تاريخ البداية والنهاية');
+          return;
+        }
+
+        // تصفية العمليات حسب التاريخ
+        const filteredTransactions = currentWallet.transactions.filter(t => {
+          const tDate = new Date(t.date.split('/').reverse().join('-'));
+          return tDate >= startDate && tDate <= endDate;
+        });
+
+        if (filteredTransactions.length === 0) {
+          alert('لا توجد عمليات في الفترة المحددة');
+          return;
+        }
+
+        // إحصائيات
+        let totalIncome = 0;
+        let totalExpenses = 0;
+        filteredTransactions.forEach(t => {
+          if (t.type === 'income') {
+            totalIncome += t.amount;
+          } else {
+            totalExpenses += t.amount;
+          }
+        });
+        const balance = totalIncome - totalExpenses;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+
+        // تعيين خط Lato كخط افتراضي
+        doc.setFont('Lato');
+
+        // تعيين الألوان
+        const colors = {
+          primary: [41, 128, 185],    // أزرق
+          success: [46, 204, 113],    // أخضر
+          successLight: [200, 250, 200], // أخضر فاتح للخلفية
+          danger: [231, 76, 60],      // أحمر
+          dangerLight: [255, 200, 200], // أحمر فاتح للخلفية
+          light: [245, 245, 245],     // رمادي فاتح
+          dark: [52, 73, 94]          // رمادي داكن
+        };
+
+        // إضافة العنوان
+        doc.setFontSize(24);
+        doc.setFont('Lato', 'bold');
+        doc.setTextColor(...colors.dark);
+        doc.text("Financial Report", doc.internal.pageSize.width/2, 40, { align: "center" });
+
+        // إضافة خط تحت العنوان
+        doc.setDrawColor(...colors.primary);
+        doc.setLineWidth(2);
+        doc.line(40, 50, doc.internal.pageSize.width - 40, 50);
+
+        // معلومات المحفظة
+        doc.setFontSize(12);
+        doc.setTextColor(...colors.dark);
+
+        const walletInfo = [
+          { label: 'Wallet', value: currentWallet.name },
+          { label: 'Currency', value: currentWallet.currency },
+          { label: 'Period', value: `${formatDate(startDate)} - ${formatDate(endDate)}` }
+        ];
+
+        let yPos = 80;
+        walletInfo.forEach(info => {
+          doc.setFont('Lato', 'bold');
+          doc.text(`${info.label}:`, 40, yPos);
+          doc.setFont('Lato', 'normal');
+          doc.text(info.value, 120, yPos);
+          yPos += 20;
+        });
+
+        // إضافة مربع الإحصائيات
+        yPos += 20;
+        const statsBox = {
+          x: 40,
+          y: yPos,
+          width: doc.internal.pageSize.width - 80,
+          height: 80
+        };
+
+        // خلفية مربع الإحصائيات
+        doc.setFillColor(...colors.light);
+        doc.roundedRect(statsBox.x, statsBox.y, statsBox.width, statsBox.height, 5, 5, 'F');
+
+        // إضافة الإحصائيات
+        doc.setFontSize(12);
+        const stats = [
+          { label: 'Total Income', value: `${formatAmount(totalIncome)} ${currentWallet.currency}`, color: colors.success },
+          { label: 'Total Expenses', value: `${formatAmount(totalExpenses)} ${currentWallet.currency}`, color: colors.danger },
+          { label: 'Balance', value: `${formatAmount(balance)} ${currentWallet.currency}`, color: balance >= 0 ? colors.success : colors.danger }
+        ];
+
+        let statsX = statsBox.x + 30;
+        stats.forEach((stat, index) => {
+          const y = statsBox.y + 35 + (index * 20);
+          doc.setFont('Lato', 'bold');
+          doc.setTextColor(...colors.dark);
+          doc.text(stat.label + ':', statsX, y);
+          doc.setFont('Lato', 'normal');
+          doc.setTextColor(...stat.color);
+          doc.text(stat.value, statsX + 100, y);
+        });
+
+        // إنشاء جدول العمليات
+        const headers = [['Date', 'Description', 'Type', 'Amount']];
+        const data = filteredTransactions.map(t => [
+          t.date,
+          t.description,
+          t.type === 'income' ? 'Income' : 'Expense',
+          `${t.type === 'income' ? '+' : '-'}${formatAmount(t.amount)} ${currentWallet.currency}`
+        ]);
+
+        // تنسيق الجدول
+        doc.autoTable({
+          head: headers,
+          body: data,
+          startY: statsBox.y + statsBox.height + 30,
+          theme: 'grid',
+          styles: {
+            fontSize: 10,
+            cellPadding: 8,
+            lineColor: [189, 195, 199],
+            lineWidth: 0.5,
+            font: 'Lato'
+          },
+          headStyles: {
+            fillColor: colors.primary,
+            textColor: 255,
+            fontSize: 11,
+            fontStyle: 'bold',
+            halign: 'center',
+            font: 'Lato'
+          },
+          columnStyles: {
+            0: { cellWidth: 80 },  // Date
+            1: { cellWidth: 'auto' }, // Description
+            2: { 
+              cellWidth: 70,
+              halign: 'center'
+            }, // Type
+            3: { 
+              cellWidth: 100,
+              halign: 'right'
+            }
+          },
+          bodyStyles: {
+            fontSize: 10,
+            font: 'Lato'
+          },
+          createdRow: function(row, data, index) {
+            const isIncome = data[2] === 'Income';
+            row.cells.forEach(cell => {
+              cell.styles.fillColor = isIncome ? colors.successLight : colors.dangerLight;
+              if (cell === row.cells[row.cells.length - 1]) {
+                cell.styles.textColor = isIncome ? colors.success : colors.danger;
+                cell.styles.fontStyle = 'bold';
+              }
+            });
+          },
+          margin: { top: 20, right: 40, bottom: 40, left: 40 },
+          didDrawPage: function(data) {
+            doc.setFont('Lato', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(...colors.dark);
+            doc.text(
+              `Page ${data.pageNumber} of ${doc.internal.getNumberOfPages()}`,
+              doc.internal.pageSize.width/2,
+              doc.internal.pageSize.height - 20,
+              { align: "center" }
+            );
+          }
+        });
+
+        // حفظ الملف
+        doc.save(`${currentWallet.name}_report_${formatDate(startDate)}.pdf`);
+
+      } catch (error) {
+        console.error('خطأ في تصدير PDF:', error);
+        alert('حدث خطأ أثناء تصدير الملف. الرجاء المحاولة مرة أخرى.');
+      }
+    }
+
+    function updateUI() {
+      if (!currentWallet) return;
+      
+      const transactionsDiv = document.getElementById('transactions-list');
+      transactionsDiv.innerHTML = '';
+
+      let totalBalance = 0;
+      let totalSavings = 0;
+      let totalExpenses = 0;
+
+      // ترتيب العمليات حسب التاريخ (الأحدث أولاً)
+      currentWallet.transactions.sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('-'));
+        const dateB = new Date(b.date.split('/').reverse().join('-'));
+        return dateB - dateA;
+      });
+
+      currentWallet.transactions.forEach((transaction, index) => {
+        const element = document.createElement('div');
+        element.className = `transaction ${transaction.type} fade-in`;
+        element.style.animationDelay = `${index * 0.1}s`;
+        
+        if (transaction.type === 'income') {
+          totalBalance += transaction.amount;
+          totalSavings += transaction.amount;
+          element.innerHTML = `
+            <div class="transaction-info">
+              <span class="date">${transaction.date}</span>
+              <span class="description">${transaction.description}</span>
+              <span class="amount income">+${formatAmount(transaction.amount)} ${currentWallet.currency}</span>
+            </div>
+            <div class="action-buttons">
+              <button class="edit-btn" onclick="openEditModal(${index})">تعديل</button>
+              <button class="delete-btn" onclick="deleteTransaction(${index})">حذف</button>
+            </div>
+          `;
+        } else {
+          totalBalance -= transaction.amount;
+          totalExpenses += transaction.amount;
+          element.innerHTML = `
+            <div class="transaction-info">
+              <span class="date">${transaction.date}</span>
+              <span class="description">${transaction.description}</span>
+              <span class="amount expense">-${formatAmount(transaction.amount)} ${currentWallet.currency}</span>
+            </div>
+            <div class="action-buttons">
+              <button class="edit-btn" onclick="openEditModal(${index})">تعديل</button>
+              <button class="delete-btn" onclick="deleteTransaction(${index})">حذف</button>
+            </div>
+          `;
+        }
+        
+        transactionsDiv.insertBefore(element, transactionsDiv.firstChild);
+      });
+
+      document.getElementById('total-balance').textContent = formatAmount(totalBalance);
+      document.getElementById('savings').textContent = formatAmount(totalSavings);
+      document.getElementById('expenses').textContent = formatAmount(totalExpenses);
+    }
+
+    function displayTransactions() {
+      if (!currentWallet || !currentWallet.transactions) return;
+      
+      const transactionsContainer = document.getElementById('transactions-list');
+      transactionsContainer.innerHTML = '';
+      
+      let totalBalance = 0;
+      let totalIncome = 0;
+      let totalExpenses = 0;
+      
+      currentWallet.transactions.forEach((transaction, index) => {
+        const transactionElement = document.createElement('div');
+        transactionElement.className = `transaction ${transaction.type}`;
+        
+        if (transaction.type === 'income') {
+          totalBalance += transaction.amount;
+          totalIncome += transaction.amount;
+          transactionElement.innerHTML = `
+            <div class="transaction-info">
+              <span class="date">${transaction.date}</span>
+              <span class="description">${transaction.description}</span>
+              <span class="amount income">+${formatAmount(transaction.amount)} ${currentWallet.currency}</span>
+            </div>
+            <div class="action-buttons">
+              <button class="edit-btn" onclick="openEditModal(${index})">تعديل</button>
+              <button class="delete-btn" onclick="deleteTransaction(${index})">حذف</button>
+            </div>
+          `;
+        } else {
+          totalBalance -= transaction.amount;
+          totalExpenses += transaction.amount;
+          transactionElement.innerHTML = `
+            <div class="transaction-info">
+              <span class="date">${transaction.date}</span>
+              <span class="description">${transaction.description}</span>
+              <span class="amount expense">-${formatAmount(transaction.amount)} ${currentWallet.currency}</span>
+            </div>
+            <div class="action-buttons">
+              <button class="edit-btn" onclick="openEditModal(${index})">تعديل</button>
+              <button class="delete-btn" onclick="deleteTransaction(${index})">حذف</button>
+            </div>
+          `;
+        }
+        
+        transactionsContainer.appendChild(transactionElement);
+      });
+
+      // تحديث الإحصائيات
+      document.getElementById('total-balance').textContent = `${formatAmount(totalBalance)} ${currentWallet.currency}`;
+      document.getElementById('savings').textContent = `${formatAmount(totalIncome)} ${currentWallet.currency}`;
+      document.getElementById('expenses').textContent = `${formatAmount(totalExpenses)} ${currentWallet.currency}`;
+    }
+
+    function updateTransaction() {
+      const index = parseInt(document.getElementById('edit-transaction-id').value);
+      const description = document.getElementById('edit-description').value;
+      const amount = parseFloat(document.getElementById('edit-amount').value);
+      const type = document.getElementById('edit-type').value;
+      const date = document.getElementById('edit-date').value;
+      
+      if (!description || isNaN(amount) || !date) {
+        alert('الرجاء ملء جميع الحقول المطلوبة');
+        return;
+      }
+
+      if (amount <= 0) {
+        alert('يجب أن يكون المبلغ أكبر من صفر');
+        return;
+      }
+
+      currentWallet.transactions[index] = {
+        description,
+        amount,
+        type,
+        date: date.split('-').reverse().join('/')
+      };
+
+      // حفظ التغييرات في التخزين المحلي
+      const wallets = JSON.parse(localStorage.getItem('wallets')) || [];
+      const walletIndex = wallets.findIndex(w => w.id === currentWallet.id);
+      if (walletIndex !== -1) {
+        wallets[walletIndex] = currentWallet;
+        localStorage.setItem('wallets', JSON.stringify(wallets));
+      }
+
+      // تحديث الواجهة
+      displayTransactions();
+      closeEditModal();
+    }
+
+    function deleteTransaction(index) {
+      if (confirm('هل أنت متأكد من حذف هذه العملية؟')) {
+        currentWallet.transactions.splice(index, 1);
+        
+        // حفظ التغييرات في التخزين المحلي
+        const wallets = JSON.parse(localStorage.getItem('wallets')) || [];
+        const walletIndex = wallets.findIndex(w => w.id === currentWallet.id);
+        if (walletIndex !== -1) {
+          wallets[walletIndex] = currentWallet;
+          localStorage.setItem('wallets', JSON.stringify(wallets));
+        }
+
+        // تحديث الواجهة
+        displayTransactions();
+      }
+    }
+
+    function setDateRange(range) {
+      const startDate = document.getElementById('export-start-date');
+      const endDate = document.getElementById('export-end-date');
+      
+      const today = new Date();
+      let start = new Date();
+      let end = new Date();
+
+      switch(range) {
+        case 'today':
+          // اليوم فقط
+          break;
+          
+        case 'week':
+          // بداية الأسبوع الحالي (الأحد)
+          start.setDate(today.getDate() - today.getDay());
+          break;
+          
+        case 'month':
+          // بداية الشهر الحالي
+          start.setDate(1);
+          break;
+          
+        case 'year':
+          // بداية السنة الحالية
+          start = new Date(today.getFullYear(), 0, 1);
+          end = new Date(today.getFullYear(), 11, 31);
+          break;
+          
+        case 'all':
+          // أقدم عملية
+          if (currentWallet && currentWallet.transactions && currentWallet.transactions.length > 0) {
+            const dates = currentWallet.transactions.map(t => new Date(t.date.split('/').reverse().join('-')));
+            start = new Date(Math.min(...dates));
+          }
+          break;
+      }
+
+      // تنسيق التواريخ
+      startDate.value = start.toISOString().split('T')[0];
+      endDate.value = end.toISOString().split('T')[0];
+    }
+
+    // تعيين التاريخ الافتراضي عند تحميل الصفحة
+    window.addEventListener('load', function() {
+      const today = new Date();
+      document.getElementById('export-start-date').valueAsDate = today;
+      document.getElementById('export-end-date').valueAsDate = today;
+    });
+
+    // Set default date to today
+    document.getElementById('transaction-date').valueAsDate = new Date();
+    
+    window.addEventListener('beforeunload', saveData);
+    loadCurrentWallet();
+    updateUI();
+  </script>
+</body></html>
